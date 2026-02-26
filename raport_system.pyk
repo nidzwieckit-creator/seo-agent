@@ -1,0 +1,163 @@
+# ==============================
+# RAPORT BSKOMFORT – WERSJA 6.0
+# ==============================
+
+import os
+import datetime
+import matplotlib.pyplot as plt
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
+from reportlab.platypus import Table, TableStyle
+from reportlab.lib import colors
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.cidfonts import UnicodeCIDFont
+
+# ------------------------------
+# USTAWIENIA PODSTAWOWE
+# ------------------------------
+
+NAZWA_PLIKU = "Raport_Tygodniowy_BSKOMFORT-6.pdf"
+LOGO = "logo.jpg"
+
+dzis = datetime.date.today()
+data_od = dzis - datetime.timedelta(days=7)
+
+# ------------------------------
+# PRZYKŁADOWE DANE (do podmiany później przez API)
+# ------------------------------
+
+wyswietlenia = 283
+wyswietlenia_poprzedni = 252
+
+klikniecia = 4
+klikniecia_poprzedni = 5
+
+ctr = 1.41
+ctr_poprzedni = 1.45
+
+pozycja = 18.2
+pozycja_poprzedni = 19.6
+
+# ------------------------------
+# OBLICZENIA ZMIAN
+# ------------------------------
+
+def zmiana_proc(nowe, stare):
+    if stare == 0:
+        return 0
+    return round(((nowe - stare) / stare) * 100, 1)
+
+z_wys = zmiana_proc(wyswietlenia, wyswietlenia_poprzedni)
+z_klik = zmiana_proc(klikniecia, klikniecia_poprzedni)
+z_ctr = zmiana_proc(ctr, ctr_poprzedni)
+z_poz = round(pozycja_poprzedni - pozycja, 1)
+
+# ------------------------------
+# GENEROWANIE WYKRESÓW
+# ------------------------------
+
+def wykres_6m():
+    tygodnie = list(range(1, 27))
+    wys = [80, 95, 70, 60, 90, 110, 150, 180, 170, 200, 230, 210, 220,
+           280, 190, 210, 260, 270, 300, 350, 480, 360, 400, 310, 283, 290]
+    klik = [8,7,9,6,5,10,7,8,6,7,8,9,7,8,6,7,9,8,6,7,10,6,7,8,4,6]
+
+    plt.figure()
+    plt.plot(tygodnie, wys)
+    plt.plot(tygodnie, klik)
+    plt.title("Tendencja 6 miesięcy")
+    plt.savefig("wykres_6m.png")
+    plt.close()
+
+# ------------------------------
+# TWORZENIE PDF
+# ------------------------------
+
+def generuj_pdf():
+
+    wykres_6m()
+
+    doc = SimpleDocTemplate(NAZWA_PLIKU, pagesize=A4)
+    elements = []
+
+    styles = getSampleStyleSheet()
+    normal = styles["Normal"]
+
+    duzy = ParagraphStyle(
+        'Duzy',
+        parent=normal,
+        fontSize=18,
+        spaceAfter=10
+    )
+
+    sredni = ParagraphStyle(
+        'Sredni',
+        parent=normal,
+        fontSize=14,
+        spaceAfter=8
+    )
+
+    # LOGO
+    if os.path.exists(LOGO):
+        elements.append(Image(LOGO, width=1*inch, height=1*inch))
+        elements.append(Spacer(1, 12))
+
+    # TYTUŁ
+    elements.append(Paragraph(
+        f"Raport tygodniowy BSKOMFORT<br/>{data_od} – {dzis}",
+        duzy))
+    elements.append(Spacer(1, 20))
+
+    # BLOKI WYNIKÓW
+
+    def strzalka(wartosc):
+        return "▲" if wartosc > 0 else "▼"
+
+    def kolor(wartosc):
+        return colors.green if wartosc > 0 else colors.red
+
+    dane = [
+        ["Wyświetlenia", f"{wyswietlenia}", f"{strzalka(z_wys)} {z_wys}%"],
+        ["Kliknięcia", f"{klikniecia}", f"{strzalka(z_klik)} {z_klik}%"],
+        ["Współczynnik klikalności", f"{ctr}%", f"{strzalka(z_ctr)} {z_ctr}%"],
+        ["Średnia pozycja", f"{pozycja}", f"{strzalka(z_poz)} {z_poz}"]
+    ]
+
+    tabela = Table(dane, colWidths=[200, 100, 100])
+    tabela.setStyle(TableStyle([
+        ('FONTSIZE', (0,0), (-1,-1), 14),
+        ('TEXTCOLOR', (2,0), (2,0), kolor(z_wys)),
+        ('TEXTCOLOR', (2,1), (2,1), kolor(z_klik)),
+        ('TEXTCOLOR', (2,2), (2,2), kolor(z_ctr)),
+        ('TEXTCOLOR', (2,3), (2,3), kolor(z_poz)),
+    ]))
+
+    elements.append(tabela)
+    elements.append(Spacer(1, 20))
+
+    # AKAPIT PODSUMOWUJĄCY
+
+    tekst = f"""
+    W ostatnim tygodniu widoczność strony utrzymała się na stabilnym poziomie.
+    Wyświetlenia rosną, co jest efektem wcześniej wdrożonych zmian technicznych
+    i optymalizacji treści. Kliknięcia naturalnie reagują z opóźnieniem,
+    dlatego realnego wzrostu można oczekiwać w ciągu najbliższych 2–3 tygodni.
+    Fundament został zbudowany – teraz pracujemy nad zwiększeniem
+    przełożenia widoczności na realny ruch.
+    """
+
+    elements.append(Paragraph(tekst, sredni))
+    elements.append(Spacer(1, 30))
+
+    # WYKRES
+    elements.append(Image("wykres_6m.png", width=6*inch, height=3*inch))
+
+    doc.build(elements)
+
+
+if __name__ == "__main__":
+    generuj_pdf()

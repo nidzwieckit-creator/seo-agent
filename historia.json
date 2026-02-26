@@ -1,0 +1,32 @@
+[
+    {
+        "data_od": "2026-02-13",
+        "data_do": "2026-02-20",
+        "wyswietlenia": 283,
+        "klikniecia": 4,
+        "ctr": 1.38,
+        "pozycja": 21.28
+    },
+    {
+        "data_od": "2026-02-13",
+        "data_do": "2026-02-20",
+        "wyswietlenia": 283,
+        "klikniecia": 4,
+        "ctr": 1.41,
+        "pozycja": 18.2
+    },
+    {
+        "data_od": "2026-02-13",
+        "data_do": "2026-02-20",
+        "wyswietlenia": 283,
+        "klikniecia": 4,
+        "ctr": 1.41,
+        "pozycja": 18.2
+    },
+    {
+        "data_od": "2026-02-16",
+        "wyswietlenia": 341,
+        "klikniecia": 3,
+        "uzytkownicy": 2
+    }
+]

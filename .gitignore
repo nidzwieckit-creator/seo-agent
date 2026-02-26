@@ -1,0 +1,6 @@
+venv_new/
+__pycache__/
+*.pyc
+.env
+klucz.json
+config.py
