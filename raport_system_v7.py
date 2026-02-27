@@ -10,6 +10,7 @@ import os
 import smtplib
 from email.message import EmailMessage
 import ssl
+OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
 
 ACCENT_COLOR = "#1f3c88"
 
@@ -19,7 +20,6 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import cm
 from reportlab.platypus import PageBreak
 from openai import OpenAI
-from config import OPENAI_API_KEY
 
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfbase import pdfmetrics
@@ -28,7 +28,6 @@ print("=== START RAPORT V7 ===")
 
 # ===== KONFIG =====
 PROPERTY_ID = "520666308"
-KEY_FILE = "klucz.json"
 GSC_SITE = "https://www.bskomfort.pl/"
 
 # ===== DATY =====
@@ -56,7 +55,18 @@ print("90 dni:", start_90, "-", end_current)
 print("12 miesięcy:", start_12m, "-", end_current)
 
 # ===== AUTORYZACJA =====
-credentials = service_account.Credentials.from_service_account_file(KEY_FILE)
+
+import json
+
+google_credentials_json = os.environ["GOOGLE_CREDENTIALS"]
+google_credentials_dict = json.loads(google_credentials_json)
+
+credentials = service_account.Credentials.from_service_account_info(
+    google_credentials_dict
+)
+
+ga_client = BetaAnalyticsDataClient(credentials=credentials)
+gsc_service = build("searchconsole", "v1", credentials=credentials)
 ga_client = BetaAnalyticsDataClient(credentials=credentials)
 gsc_service = build("searchconsole", "v1", credentials=credentials)
 
@@ -474,7 +484,7 @@ Ton:
 - rzeczowy
 - bez marketingowego bełkotu
 - krótko (2–3 zdania)
-- mówimy jak analityk, nie jak sprzedawca
+- luźny
 """
 
 ctr_position_response = ai_client.chat.completions.create(
