@@ -367,9 +367,6 @@ print("GA średnia 90 dni:", ga_90_avg_week)
 print("GSC 7 dni:", gsc_current_clicks, gsc_current_impr)
 print("GSC poprzedni:", gsc_previous_clicks, gsc_previous_impr)
 
-print("Największe wzrosty:", growing_queries)
-print("Największe spadki:", declining_queries)
-
 print("Trend 12M (GSC):", gsc_monthly)
 
 # ===== ANALIZA AI =====
