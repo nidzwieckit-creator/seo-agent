@@ -214,6 +214,11 @@ def compare_queries(current, previous):
 
     return comparison
 
+def percent_change(current, previous):
+    if previous == 0:
+        return 0
+    return round(((current - previous) / previous) * 100, 1)
+
 # ===== OBLICZENIA =====
 
 # GA operacyjnie
@@ -279,11 +284,6 @@ def arrow(value):
 
 gsc_30_clicks, gsc_30_impr, gsc_30_ctr, gsc_30_pos = get_gsc_sum(start_30, end_30)
 gsc_prev_30_clicks, gsc_prev_30_impr, gsc_prev_30_ctr, gsc_prev_30_pos = get_gsc_sum(start_prev_30, end_prev_30)
-
-def percent_change(current, previous):
-    if previous == 0:
-        return 0
-    return round(((current - previous) / previous) * 100, 1)
 
 clicks_30_change = percent_change(gsc_30_clicks, gsc_prev_30_clicks)
 impr_30_change = percent_change(gsc_30_impr, gsc_prev_30_impr)
