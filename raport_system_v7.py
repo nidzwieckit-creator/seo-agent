@@ -165,20 +165,54 @@ def get_gsc_queries(start, end):
         "dimensions": ["query"],
         "rowLimit": 250
     }
+
     response = gsc_service.searchanalytics().query(
         siteUrl=GSC_SITE,
         body=request
     ).execute()
 
     data = {}
+
     if "rows" in response:
         for row in response["rows"]:
-            data[row["keys"][0]] = {
-                "clicks": row["clicks"],
-                "impressions": row["impressions"]
+            query_name = row["keys"][0]
+
+            data[query_name] = {
+                "clicks": row.get("clicks", 0),
+                "impressions": row.get("impressions", 0),
+                "ctr": row.get("ctr", 0),
+                "position": row.get("position", 0)
             }
 
     return data
+
+def compare_queries(current, previous):
+    comparison = []
+
+    for query, data in current.items():
+        prev_data = previous.get(query, {
+            "clicks": 0,
+            "impressions": 0,
+            "ctr": 0,
+            "position": 0
+        })
+
+        diff_clicks = data["clicks"] - prev_data["clicks"]
+        diff_impressions = data["impressions"] - prev_data["impressions"]
+        diff_position = data["position"] - prev_data["position"]
+
+        comparison.append({
+            "query": query,
+            "clicks": data["clicks"],
+            "impressions": data["impressions"],
+            "ctr": data["ctr"],
+            "position": data["position"],
+            "diff_clicks": diff_clicks,
+            "diff_impressions": diff_impressions,
+            "diff_position": diff_position
+        })
+
+    return comparison
 
 # ===== OBLICZENIA =====
 
@@ -188,10 +222,50 @@ ga_previous = get_ga_sum(start_previous, end_previous)
 ga_90_total = get_ga_sum(start_90, end_current)
 ga_90_avg_week = round(ga_90_total / 13, 2)
 
+# Porównanie do średniej 90 dni
+ga_vs_90_change = percent_change(ga_current, ga_90_avg_week)
+
 # GSC operacyjnie
 
 gsc_current_clicks, gsc_current_impr, gsc_current_ctr, gsc_current_pos = get_gsc_sum(start_current, end_current)
 gsc_previous_clicks, gsc_previous_impr, gsc_previous_ctr, gsc_previous_pos = get_gsc_sum(start_previous, end_previous)
+
+# ===== ZMIANY TYDZIEŃ DO TYGODNIA =====
+ga_week_change = percent_change(ga_current, ga_previous)
+gsc_clicks_week_change = percent_change(gsc_current_clicks, gsc_previous_clicks)
+gsc_impr_week_change = percent_change(gsc_current_impr, gsc_previous_impr)
+
+# GSC zapytania (frazy)
+gsc_queries_current = get_gsc_queries(start_current, end_current)
+gsc_queries_previous = get_gsc_queries(start_previous, end_previous)
+
+queries_comparison = compare_queries(gsc_queries_current, gsc_queries_previous)
+
+# ===== ANALIZA FRAZ =====
+
+# TOP 10 po kliknięciach
+top_queries = sorted(
+    queries_comparison,
+    key=lambda x: x["clicks"],
+    reverse=True
+)[:3]
+
+# Frazy z potencjałem (pozycja 8–20 i rosną wyświetlenia)
+potential_queries = [
+    q for q in queries_comparison
+    if 8 <= q["position"] <= 20 and q["impressions"] > 20
+]
+
+# Frazy spadkowe (spadek kliknięć > 20% i min. 20 wyświetleń)
+declining_queries = [
+    q for q in queries_comparison
+    if q["diff_clicks"] < 0 and abs(q["diff_clicks"]) > (0.2 * q["clicks"])
+]
+
+# Skrócone dane do AI (ograniczamy ilość)
+top_summary = top_queries[:5]
+potential_summary = potential_queries[:5]
+declining_summary = declining_queries[:5]
 
 # ===== GSC 30 DNI =====
 def arrow(value):
@@ -285,27 +359,6 @@ elif seo_index <= 9:
 else:
     seo_status = "Bardzo wysoka dynamika – możliwy efekt skali i przełamanie widoczności."
 
-# Zapytania
-queries_current = get_gsc_queries(start_current, end_current)
-queries_previous = get_gsc_queries(start_previous, end_previous)
-
-new_queries = []
-growing_queries = []
-declining_queries = []
-
-for q in queries_current:
-    if q not in queries_previous:
-        new_queries.append(q)
-    else:
-        diff = queries_current[q]["impressions"] - queries_previous[q]["impressions"]
-        if diff > 0:
-            growing_queries.append((q, diff))
-        elif diff < 0:
-            declining_queries.append((q, diff))
-
-growing_queries = sorted(growing_queries, key=lambda x: x[1], reverse=True)[:5]
-declining_queries = sorted(declining_queries, key=lambda x: x[1])[:5]
-
 print("\n=== PODSUMOWANIE V7 ===")
 print("GA 7 dni:", ga_current)
 print("GA poprzedni:", ga_previous)
@@ -327,14 +380,18 @@ ai_client = OpenAI(api_key=OPENAI_API_KEY)
 dashboard_data = {
     "ga_current": ga_current,
     "ga_previous": ga_previous,
+    "ga_week_change": ga_week_change,
+    "ga_vs_90_change": ga_vs_90_change,
+    "gsc_clicks_week_change": gsc_clicks_week_change,
+    "gsc_impr_week_change": gsc_impr_week_change,
     "ga_avg_90": ga_90_avg_week,
     "gsc_current_clicks": gsc_current_clicks,
     "gsc_previous_clicks": gsc_previous_clicks,
     "gsc_current_impressions": gsc_current_impr,
     "gsc_previous_impressions": gsc_previous_impr,
-    "new_queries": new_queries[:5],
-    "growing_queries": growing_queries,
-    "declining_queries": declining_queries,
+    "top_queries": top_queries,
+    "potential_queries": potential_queries[:3],
+    "declining_queries": declining_queries[:3],
     "trend_12m": gsc_monthly,
     "forecast_impr_3m": forecast_impr_3m,
     "forecast_clicks_3m": forecast_clicks_3m,
@@ -359,7 +416,22 @@ Zrób:
 2. Co się dzieje w krótkim terminie
 3. Czy trend 12M jest zdrowy
 4. Co mówią zapytania
+
+Opisz zapytania jednym średniej długości akapitem.
+Nie rób list ani wypunktowań.
+Wyjaśnij:
+- które frazy są obecnie najmocniejsze,
+- gdzie widać realny potencjał wzrostu,
+- które frazy tracą względem poprzedniego tygodnia.
+Pisz bardzo prostym językiem, bez żargonu SEO.
 5. 5 konkretnych działań na najbliższy tydzień
+Raport jest tygodniowy.
+Porównuj zawsze:
+- do poprzedniego tygodnia
+- do średniej z 90 dni
+Wyraźnie mów, czy zmiany procentowe są istotne czy mieszczą się w normie.
+Pisz bardzo prostym językiem.
+Nie używaj punktów ani list w analizie.
 
 Dane:
 {dashboard_data}
