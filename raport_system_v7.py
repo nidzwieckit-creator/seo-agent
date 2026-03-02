@@ -369,68 +369,90 @@ print("GSC poprzedni:", gsc_previous_clicks, gsc_previous_impr)
 
 print("Trend 12M (GSC):", gsc_monthly)
 
+STYLE_BASE = """
+Pisz raport dla dwóch właścicieli firmy, którzy nie znają SEO.
+Tłumacz wszystko bardzo prosto.
+Jeśli coś spada – wyjaśnij dlaczego i czy to normalne.
+Jeśli coś rośnie – wyjaśnij z czego to wynika.
+Nie używaj marketingowego języka.
+Nie pisz, że coś „wygląda zdrowo”.
+Nie używaj branżowych skrótów.
+Nie używaj angielskich słów.
+Nie rób list ani wypunktowań.
+Pisz konkretnie i normalnie, jak rozmowa między wspólnikami.
+"""
+
 # ===== ANALIZA AI =====
 
 ai_client = OpenAI(api_key=OPENAI_API_KEY)
 
 dashboard_data = {
+    # GA
     "ga_current": ga_current,
     "ga_previous": ga_previous,
     "ga_week_change": ga_week_change,
     "ga_vs_90_change": ga_vs_90_change,
-    "gsc_clicks_week_change": gsc_clicks_week_change,
-    "gsc_impr_week_change": gsc_impr_week_change,
     "ga_avg_90": ga_90_avg_week,
+
+    # GSC tydzień
     "gsc_current_clicks": gsc_current_clicks,
     "gsc_previous_clicks": gsc_previous_clicks,
+    "gsc_clicks_week_change": gsc_clicks_week_change,
+
     "gsc_current_impressions": gsc_current_impr,
     "gsc_previous_impressions": gsc_previous_impr,
-    "top_queries": top_queries,
-    "potential_queries": potential_queries[:3],
-    "declining_queries": declining_queries[:3],
+    "gsc_impr_week_change": gsc_impr_week_change,
+
+    "gsc_current_ctr": round(gsc_current_ctr * 100, 2),
+    "gsc_previous_ctr": round(gsc_previous_ctr * 100, 2),
+
+    "gsc_current_position": round(gsc_current_pos, 2),
+    "gsc_previous_position": round(gsc_previous_pos, 2),
+
+    # Frazy
+    "top_queries": top_summary,
+    "potential_queries": potential_summary,
+    "declining_queries": declining_summary,
+
+    "count_top_queries": len(top_summary),
+    "count_potential_queries": len(potential_summary),
+    "count_declining_queries": len(declining_summary),
+
+    "total_queries_current": len(gsc_queries_current),
+    "total_queries_previous": len(gsc_queries_previous),
+
+    # Trend 12M
     "trend_12m": gsc_monthly,
+
+    # Prognoza
     "forecast_impr_3m": forecast_impr_3m,
     "forecast_clicks_3m": forecast_clicks_3m,
     "forecast_clicks_top10": forecast_clicks_top10,
     "forecast_leads_3m": forecast_leads_3m,
-    "avg_monthly_growth": round(avg_monthly_growth * 100, 1),
+    "avg_monthly_growth_percent": round(avg_monthly_growth * 100, 1),
 }
 
 # ---- GŁÓWNA ANALIZA ----
 
 main_prompt = f"""
-Jesteś analitykiem SEO dla właścicieli firmy.
+{STYLE_BASE}
 
-Ton:
-- rzeczowy
-- luźny
-- bez marketingowego bełkotu
-- dla dwóch właścicieli sprawdzających czy SEO zaczyna działać
+Masz poniższe dane tygodniowe i porównawcze:
+
+{dashboard_data}
 
 Zrób:
-1. Krótką diagnozę sytuacji
-2. Co się dzieje w krótkim terminie
-3. Czy trend 12M jest zdrowy
-4. Co mówią zapytania
 
-Opisz zapytania jednym średniej długości akapitem.
-Nie rób list ani wypunktowań.
-Wyjaśnij:
-- które frazy są obecnie najmocniejsze,
-- gdzie widać realny potencjał wzrostu,
-- które frazy tracą względem poprzedniego tygodnia.
-Pisz bardzo prostym językiem, bez żargonu SEO.
-5. 5 konkretnych działań na najbliższy tydzień
+1. Krótką, prostą diagnozę sytuacji.
+2. Co zmieniło się względem poprzedniego tygodnia.
+3. Czy obecne wyniki odbiegają od średniej z 90 dni.
+4. Co widać po frazach – czy rośnie liczba zapytań, czy pojawiają się nowe, czy coś traci.
+5. Czy zmiany procentowe są istotne czy mieszczą się w normalnych wahaniach.
+
+Nie używaj list ani wypunktowań.
+Nie używaj żargonu SEO.
+Wyjaśniaj liczby po ludzku.
 Raport jest tygodniowy.
-Porównuj zawsze:
-- do poprzedniego tygodnia
-- do średniej z 90 dni
-Wyraźnie mów, czy zmiany procentowe są istotne czy mieszczą się w normie.
-Pisz bardzo prostym językiem.
-Nie używaj punktów ani list w analizie.
-
-Dane:
-{dashboard_data}
 """
 
 main_response = ai_client.chat.completions.create(
@@ -444,29 +466,25 @@ analysis_text = main_response.choices[0].message.content.strip()
 # ===== PROGNOZA AI =====
 
 forecast_prompt = f"""
-Jesteś analitykiem SEO tworzącym prognozę.
+{STYLE_BASE}
 
-Ton:
-- rzeczowy
-- spokojny
-- bez obiecywania wyników
-- bez marketingowego języka
+Masz dane dotyczące prognozy na 3 miesiące:
 
-Na podstawie danych:
+- Średnie miesięczne tempo wzrostu wyświetleń: {round(avg_monthly_growth*100,1)}%
+- Prognozowane wyświetlenia za 3 miesiące: {forecast_impr_3m}
+- Prognozowane kliknięcia za 3 miesiące (przy obecnym CTR): {forecast_clicks_3m}
+- Prognozowane kliknięcia przy scenariuszu TOP10 (CTR 3%): {forecast_clicks_top10}
+- Szacowana liczba potencjalnych zapytań (2% konwersji): {forecast_leads_3m}
 
-Średnie miesięczne tempo wzrostu wyświetleń: {round(avg_monthly_growth*100,1)}%
-Prognozowane wyświetlenia za 3 miesiące: {forecast_impr_3m}
-Prognozowane kliknięcia za 3 miesiące (przy obecnym CTR): {forecast_clicks_3m}
-Prognozowane kliknięcia przy scenariuszu TOP10 (CTR 3%): {forecast_clicks_top10}
-Szacowana liczba potencjalnych zapytań (2% konwersji): {forecast_leads_3m}
+Wyjaśnij:
+- czy obecne tempo wzrostu jest duże czy raczej spokojne,
+- co realnie oznacza ta prognoza w liczbach,
+- co by się zmieniło przy lepszej pozycji,
+- czy te prognozy są ambitne czy raczej ostrożne.
 
-Zrób:
-1. Krótką ocenę momentum.
-2. Co się stanie przy utrzymaniu trendu.
-3. Co zmienia wejście do TOP10.
-4. Ostrożną ocenę potencjału zapytań.
-
-Max 8–10 zdań.
+Nie obiecuj wyników.
+Nie używaj marketingowego języka.
+8–10 zdań.
 """
 
 forecast_response = ai_client.chat.completions.create(
@@ -480,20 +498,20 @@ forecast_text = forecast_response.choices[0].message.content
 # ---- ANALIZA POD WYKRESEM KLIKNIĘĆ ----
 
 clicks_prompt = f"""
-Jesteś analitykiem SEO dla właścicieli firmy.
+{STYLE_BASE}
 
-Ton:
-- rzeczowy
-- luźny
-- bez marketingowego bełkotu
+Skup się tylko na trendzie kliknięć z 12 miesięcy:
 
-Skup się WYŁĄCZNIE na trendzie kliknięć z 12 miesięcy:
 {gsc_monthly}
 
-Napisz 2-3 zdania:
-- czy trend jest rosnący, spadający czy niestabilny
-- czy ostatnie miesiące są lepsze czy gorsze
-- czy wygląda to zdrowo
+Powiedz:
+- czy trend w dłuższym czasie rośnie czy nie
+- czy ostatnie miesiące są lepsze czy słabsze
+- czy to wygląda jak realny rozwój czy wahanie
+
+Nie oceniaj SEO ogólnie.
+Nie używaj list.
+2–4 zdania.
 """
 
 clicks_response = ai_client.chat.completions.create(
@@ -507,20 +525,20 @@ clicks_analysis_text = clicks_response.choices[0].message.content.strip()
 # ---- ANALIZA POD WYKRESEM WYŚWIETLEŃ ----
 
 impressions_prompt = f"""
-Jesteś analitykiem SEO dla właścicieli firmy.
+{STYLE_BASE}
 
-Ton:
-- rzeczowy
-- luźny
-- bez marketingowego bełkotu
+Skup się tylko na trendzie wyświetleń z 12 miesięcy:
 
-Skup się WYŁĄCZNIE na trendzie wyświetleń z 12 miesięcy:
 {gsc_monthly}
 
-Napisz 2-3 zdania:
-- czy trend rośnie, spada czy jest stabilny
-- czy ostatnie miesiące pokazują poprawę
-- czy wygląda to zdrowo
+Wyjaśnij:
+- czy zasięg strony rośnie czy stoi w miejscu
+- czy ostatnie miesiące pokazują przyspieszenie
+- czy widać, że Google pokazuje nas częściej niż wcześniej
+
+Nie oceniaj całego SEO.
+Nie używaj list.
+2–4 zdania.
 """
 
 impressions_response = ai_client.chat.completions.create(
@@ -540,19 +558,26 @@ ctr_trend = percent_change(gsc_30_ctr, gsc_prev_30_ctr)
 pos_trend = percent_change(gsc_prev_30_pos, gsc_30_pos)
 
 ctr_position_prompt = f"""
-Krótko oceń wykres 12M dla CTR i średniej pozycji.
+{STYLE_BASE}
 
-Dane:
+Dane z ostatnich 30 dni:
+
 - Aktualny CTR: {ctr_last}%
-- Zmiana CTR: {ctr_trend}%
+- Zmiana CTR względem poprzednich 30 dni: {ctr_trend}%
 - Aktualna średnia pozycja: {pos_last}
 - Zmiana pozycji: {pos_trend}%
+- Liczba wszystkich fraz obecnie: {len(gsc_queries_current)}
+- Liczba fraz poprzednio: {len(gsc_queries_previous)}
 
-Ton:
-- rzeczowy
-- bez marketingowego bełkotu
-- krótko (2–3 zdania)
-- luźny
+Wyjaśnij:
+- co oznacza zmiana CTR w kontekście wzrostu lub spadku liczby wyświetleń,
+- czy spadek CTR może wynikać z większej liczby nowych fraz,
+- czy zmiana pozycji jest realnie duża czy kosmetyczna,
+- czy to wygląda jak etap przejściowy czy problem.
+
+Nie używaj list.
+Nie oceniaj „zdrowo / niezdrowo”.
+2–4 zdania.
 """
 
 ctr_position_response = ai_client.chat.completions.create(
@@ -566,25 +591,26 @@ ctr_position_analysis_text = ctr_position_response.choices[0].message.content
 # ===== SCENARIUSZE GENEROWANE PRZEZ AI =====
 
 scenario_prompt = f"""
-Na podstawie poniższych danych opisz w prosty sposób, co może wydarzyć się z naszą widocznością w Google.
+{STYLE_BASE}
 
-Dane:
+Masz dane scenariuszowe:
+
 - Średni wzrost miesięczny: {scenario_growth}%
 - Prognoza 3 miesiące (utrzymanie trendu): {forecast_impr_3m} wyświetleń i {forecast_clicks_3m} kliknięć
-- Scenariusz TOP10 (CTR 4%): {forecast_clicks_top10_real} kliknięć miesięcznie
+- Scenariusz lepszej pozycji (CTR 4%): {forecast_clicks_top10_real} kliknięć miesięcznie
 - Scenariusz ostrożny: {forecast_impr_slow} wyświetleń i {forecast_clicks_slow} kliknięć
 - Indeks kondycji SEO: {seo_index}/10
-- Ocena systemowa: {seo_status}
 
-Napisz to:
-- bardzo prostym językiem
-- tak, jakbyś tłumaczył to komuś, kto nie zna się na SEO
-- bez marketingowego bełkotu
-- bez branżowych skrótów
-- bez angielskich słów
-- bez punktów i list
+Wyjaśnij:
+- co oznacza utrzymanie obecnego tempa,
+- co daje poprawa pozycji,
+- co oznacza wolniejszy scenariusz,
+- czy obecna sytuacja jest stabilna czy krucha.
 
-Ma to brzmieć jak normalne, spokojne wyjaśnienie sytuacji między wspólnikami.
+Nie używaj list.
+Nie używaj branżowego języka.
+Nie przesadzaj z optymizmem ani pesymizmem.
+Ma to brzmieć jak spokojna rozmowa między wspólnikami.
 """
 
 scenario_response = ai_client.responses.create(
