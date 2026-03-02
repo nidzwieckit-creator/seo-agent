@@ -472,19 +472,16 @@ Masz dane dotyczące prognozy na 3 miesiące:
 
 - Średnie miesięczne tempo wzrostu wyświetleń: {round(avg_monthly_growth*100,1)}%
 - Prognozowane wyświetlenia za 3 miesiące: {forecast_impr_3m}
-- Prognozowane kliknięcia za 3 miesiące (przy obecnym CTR): {forecast_clicks_3m}
-- Prognozowane kliknięcia przy scenariuszu TOP10 (CTR 3%): {forecast_clicks_top10}
+- Prognozowane kliknięcia za 3 miesiące: {forecast_clicks_3m}
 - Szacowana liczba potencjalnych zapytań (2% konwersji): {forecast_leads_3m}
 
-Wyjaśnij:
-- czy obecne tempo wzrostu jest duże czy raczej spokojne,
-- co realnie oznacza ta prognoza w liczbach,
-- co by się zmieniło przy lepszej pozycji,
-- czy te prognozy są ambitne czy raczej ostrożne.
+Wyjaśnij krótko:
+- czy tempo wzrostu jest szybkie czy raczej spokojne,
+- co te liczby oznaczają w praktyce.
 
-Nie obiecuj wyników.
-Nie używaj marketingowego języka.
-8–10 zdań.
+Nie analizuj wariantów.
+Nie porównuj scenariuszy.
+Maksymalnie 5 zdań.
 """
 
 forecast_response = ai_client.chat.completions.create(
@@ -588,29 +585,68 @@ ctr_position_response = ai_client.chat.completions.create(
 
 ctr_position_analysis_text = ctr_position_response.choices[0].message.content
 
+# ===== ANALIZA FRAZ =====
+
+queries_prompt = f"""
+{STYLE_BASE}
+
+Masz dane o frazach:
+
+- Liczba wszystkich fraz teraz: {len(gsc_queries_current)}
+- Liczba fraz wcześniej: {len(gsc_queries_previous)}
+
+Najmocniejsze frazy:
+{top_summary}
+
+Frazy z potencjałem (pozycja 8–20):
+{potential_summary}
+
+Frazy spadkowe:
+{declining_summary}
+
+Wyjaśnij:
+- czy pojawiają się nowe, realne zapytania
+- czy wygasają stare, mało wartościowe frazy
+- czy to wygląda jak rozszerzanie widoczności
+- czy spadki są groźne czy normalne
+
+Pisz prosto.
+Nie używaj list.
+3–6 zdań.
+"""
+
+queries_response = ai_client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": queries_prompt}],
+    temperature=0.5
+)
+
+queries_analysis_text = queries_response.choices[0].message.content.strip()
+
 # ===== SCENARIUSZE GENEROWANE PRZEZ AI =====
 
 scenario_prompt = f"""
 {STYLE_BASE}
 
-Masz dane scenariuszowe:
+Masz trzy możliwe warianty rozwoju:
 
-- Średni wzrost miesięczny: {scenario_growth}%
-- Prognoza 3 miesiące (utrzymanie trendu): {forecast_impr_3m} wyświetleń i {forecast_clicks_3m} kliknięć
-- Scenariusz lepszej pozycji (CTR 4%): {forecast_clicks_top10_real} kliknięć miesięcznie
-- Scenariusz ostrożny: {forecast_impr_slow} wyświetleń i {forecast_clicks_slow} kliknięć
-- Indeks kondycji SEO: {seo_index}/10
+Wariant 1 – utrzymanie obecnego tempa:
+{forecast_impr_3m} wyświetleń i {forecast_clicks_3m} kliknięć
+
+Wariant 2 – poprawa pozycji (CTR 4%):
+{forecast_clicks_top10_real} kliknięć miesięcznie
+
+Wariant 3 – wolniejszy wzrost:
+{forecast_impr_slow} wyświetleń i {forecast_clicks_slow} kliknięć
 
 Wyjaśnij:
-- co oznacza utrzymanie obecnego tempa,
-- co daje poprawa pozycji,
-- co oznacza wolniejszy scenariusz,
-- czy obecna sytuacja jest stabilna czy krucha.
+- czym różnią się te trzy warianty,
+- który jest najbardziej realny,
+- czy obecna sytuacja jest stabilna czy łatwo może się zmienić.
 
-Nie używaj list.
-Nie używaj branżowego języka.
-Nie przesadzaj z optymizmem ani pesymizmem.
-Ma to brzmieć jak spokojna rozmowa między wspólnikami.
+Nie powtarzaj opisu z prognozy.
+Nie tłumacz ponownie wzrostu procentowego.
+Maksymalnie 6 zdań.
 """
 
 scenario_response = ai_client.responses.create(
@@ -780,6 +816,14 @@ elements.append(Spacer(1, 15))
 elements.append(Paragraph(f"<i>{ctr_position_analysis_text}</i>", styles["Normal"]))
 elements.append(Spacer(1, 25))
 elements.append(Spacer(1, 20))
+
+elements.append(Spacer(1, 25))
+elements.append(Paragraph("<b>Co dzieje się z frazami</b>", styles["Heading2"]))
+elements.append(Spacer(1, 15))
+
+for line in queries_analysis_text.split("\n"):
+    elements.append(Paragraph(line, styles["Normal"]))
+    elements.append(Spacer(1, 8))
 
 elements.append(Spacer(1, 30))
 elements.append(Paragraph("<b>Prognoza SEO – scenariusz dynamiczny</b>", styles["Heading2"]))
