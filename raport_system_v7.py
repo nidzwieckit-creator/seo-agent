@@ -297,6 +297,12 @@ gsc_monthly = get_gsc_monthly(start_12m, end_current)
 # sortujemy miesiące rosnąco
 months_sorted = sorted(gsc_monthly.keys())
 
+# usuwamy bieżący miesiąc jeśli jest niepełny
+current_month = end_current.strftime("%Y-%m")
+
+if months_sorted and months_sorted[-1] == current_month:
+    months_sorted = months_sorted[:-1]
+
 # bierzemy ostatnie 3 miesiące (jeśli są)
 last_3 = months_sorted[-3:]
 
