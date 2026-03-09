@@ -31,10 +31,17 @@ PROPERTY_ID = "520666308"
 GSC_SITE = "https://www.bskomfort.pl/"
 
 # ===== DATY =====
-today = datetime.date.today()
-end_current = today - datetime.timedelta(days=1)
-start_current = end_current - datetime.timedelta(days=6)
 
+today = datetime.date.today()
+
+# ostatnia niedziela
+last_sunday = today - datetime.timedelta(days=today.weekday() + 1)
+
+# aktualny tydzień (poniedziałek -> niedziela)
+start_current = last_sunday - datetime.timedelta(days=6)
+end_current = last_sunday
+
+# poprzedni tydzień
 end_previous = start_current - datetime.timedelta(days=1)
 start_previous = end_previous - datetime.timedelta(days=6)
 
