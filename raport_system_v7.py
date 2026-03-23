@@ -447,25 +447,46 @@ dashboard_data = {
 
 # ---- GŁÓWNA ANALIZA ----
 
-main_prompt = f"""
+main prompt = f"""
 {STYLE_BASE}
 
-Masz poniższe dane tygodniowe i porównawcze:
+Masz poniższe dane:
 
 {dashboard_data}
 
-Zrób:
+===== ZASADY ANALIZY =====
 
-1. Krótką, prostą diagnozę sytuacji.
-2. Co zmieniło się względem poprzedniego tygodnia.
-3. Czy obecne wyniki odbiegają od średniej z 90 dni.
-4. Co widać po frazach – czy rośnie liczba zapytań, czy pojawiają się nowe, czy coś traci.
-5. Czy zmiany procentowe są istotne czy mieszczą się w normalnych wahaniach.
+1. Najważniejsze są dane tygodniowe:
+- ostatnie 7 dni vs poprzedni tydzień
+- to jest główna podstawa wniosków
 
+2. Dane 30-dniowe:
+- traktuj jako szerszy kontekst
+- pomagają ocenić czy coś jest chwilowe czy trwałe
+
+3. Dane miesięczne:
+- traktuj tylko jako tło (trend)
+- NIE oceniaj bieżącego miesiąca jako spadku jeśli jest niepełny
+
+4. Jeśli CTR spada przy wzroście wyświetleń:
+- wyjaśnij że to normalne (większy zasięg = więcej słabszych pozycji)
+
+5. Jeśli dane są niskie przez początek okresu:
+- NIE nazywaj tego spadkiem
+- wyjaśnij to normalnie
+
+===== ZADANIE =====
+
+Napisz krótką analizę:
+
+- co się realnie dzieje (na podstawie tygodni)
+- czy idzie to w dobrą stronę
+- co jest normalne (np. wahania, CTR)
+- czy coś wymaga uwagi
+
+Pisz prostym językiem, jak do laika.
+Bez lania wody i bez żargonu SEO.
 Nie używaj list ani wypunktowań.
-Nie używaj żargonu SEO.
-Wyjaśniaj liczby po ludzku.
-Raport jest tygodniowy.
 """
 
 main_response = ai_client.chat.completions.create(
