@@ -447,7 +447,7 @@ dashboard_data = {
 
 # ---- GŁÓWNA ANALIZA ----
 
-main prompt = f"""
+main_prompt = f"""
 {STYLE_BASE}
 
 Masz poniższe dane:
