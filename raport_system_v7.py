@@ -450,6 +450,19 @@ dashboard_data = {
 main_prompt = f"""
 {STYLE_BASE}
 
+UWAGA KRYTYCZNA:
+
+Nie wyciągaj wniosków na podstawie niepełnych miesięcy.
+Jeśli bieżący miesiąc ma mniej danych niż poprzednie, to jest normalne i NIE oznacza spadku.
+
+Najważniejsze dane:
+- ostatnie 7 dni vs poprzedni tydzień
+
+Dane miesięczne traktuj tylko jako tło, NIE jako ocenę bieżącej sytuacji.
+
+Jeśli CTR spada przy wzroście wyświetleń:
+to jest normalne — oznacza większy zasięg (więcej słabszych pozycji).
+
 Masz poniższe dane:
 
 {dashboard_data}
