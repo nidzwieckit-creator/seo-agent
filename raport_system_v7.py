@@ -395,6 +395,22 @@ Nie rób list ani wypunktowań.
 Pisz konkretnie i normalnie, jak rozmowa między wspólnikami.
 """
 
+SEO_CONTEXT = """
+Strona jest na etapie wchodzenia w nowe frazy.
+Wcześniej ruch był głównie brandowy.
+
+Obecnie:
+- rosną wyświetlenia
+- CTR może spadać (to normalne)
+- kliknięcia mogą się wahać
+
+To jest faza rozwoju i zwiększania widoczności.
+
+WAŻNE:
+- spadek CTR przy wzroście wyświetleń = normalne
+- NIE traktuj tego jako problem
+"""
+
 # ===== ANALIZA AI =====
 
 ai_client = OpenAI(api_key=OPENAI_API_KEY)
@@ -449,7 +465,7 @@ dashboard_data = {
 
 main_prompt = f"""
 {STYLE_BASE}
-
+{SEO_CONTEXT}
 UWAGA KRYTYCZNA:
 
 Nie wyciągaj wniosków na podstawie niepełnych miesięcy.
@@ -617,6 +633,7 @@ pos_trend = percent_change(gsc_prev_30_pos, gsc_30_pos)
 
 ctr_position_prompt = f"""
 {STYLE_BASE}
+{SEO_CONTEXT}
 
 Dane z ostatnich 30 dni:
 
@@ -650,6 +667,7 @@ ctr_position_analysis_text = ctr_position_response.choices[0].message.content
 
 queries_prompt = f"""
 {STYLE_BASE}
+{SEO_CONTEXT}
 
 Masz dane o frazach:
 
@@ -688,6 +706,7 @@ queries_analysis_text = queries_response.choices[0].message.content.strip()
 
 scenario_prompt = f"""
 {STYLE_BASE}
+{SEO_CONTEXT}
 
 Masz trzy możliwe warianty rozwoju:
 
