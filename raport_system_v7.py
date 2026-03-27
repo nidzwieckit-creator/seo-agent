@@ -463,6 +463,20 @@ Dane miesięczne traktuj tylko jako tło, NIE jako ocenę bieżącej sytuacji.
 Jeśli CTR spada przy wzroście wyświetleń:
 to jest normalne — oznacza większy zasięg (więcej słabszych pozycji).
 
+KLUCZOWA INTERPRETACJA SEO:
+
+Jeśli wyświetlenia rosną, a CTR i kliknięcia spadają:
+to NIE jest problem — to naturalny etap rozwoju.
+
+Oznacza to:
+- strona pojawia się na większą liczbę zapytań
+- wchodzi w nowe frazy
+- jest częściej pokazywana, ale jeszcze na niższych pozycjach
+
+W takiej sytuacji oceniaj trend jako POZYTYWNY, a nie negatywny.
+
+Spadek CTR w tym przypadku jest normalny i wynika z większego zasięgu.
+
 Masz poniższe dane:
 
 {dashboard_data}
